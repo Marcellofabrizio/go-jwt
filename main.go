@@ -4,7 +4,6 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/base64"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -43,7 +42,7 @@ func main() {
 	// 	return
 	// }
 
-	secret := []byte("secret")
+	secret := []byte("8Zz5tw0Ionm3XPZZfN0NOml3z9FMfmpgXwovR9fp6ryDIoGRM8EPHAB6iHsc0fb")
 
 	fmt.Println("Header: ", string(headerDataJSON))
 	fmt.Println("Encoded Header: ", encodedHeader)
@@ -58,13 +57,13 @@ func main() {
 		builder.WriteString(part)
 	}
 
-	hmac := hmac.New(sha256.New, []byte(secret))
+	hmac := hmac.New(sha256.New, secret)
 
 	hmac.Write([]byte(builder.String()))
 	dataHmac := hmac.Sum(nil)
 
-	hmacHex := hex.EncodeToString(dataHmac)
-	secretHex := hex.EncodeToString(secret)
+	hmacHex := base64.RawURLEncoding.EncodeToString(dataHmac)
+	secretHex := base64.RawURLEncoding.EncodeToString(secret)
 
 	fmt.Printf("HMAC_SHA256(key: %s, data: %s): %s \n", secretHex, builder.String(), hmacHex)
 	fmt.Printf("JWT: %s.%s.%s \n", encodedHeader, encodedPayload, hmacHex)
