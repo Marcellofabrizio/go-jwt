@@ -1,0 +1,11 @@
+{
+    "keys": [
+        {
+            "alg": "RS256",
+            "kty": "RSA",
+            "use": "sig",
+            "n": "AoGBAI4-FMq6dGpI8PaB8UjvryMdHK-CT1Vm52iBE2DudEJt_trDmRED7ad8bfnQNtOz0l2hgYQ0fxJaBzfMWn6nNVX0t_JL9UFUHIn5kv77lVx_s5MT8uaBB2DUeO8gG8aMgmuO8zBWIPsH3FcCrljxXH1BjgnB2VSyW_Ngjz-ocSaX",
+            "e": "AgMBAAE"
+        }
+    ]
+}
