@@ -1,7 +1,7 @@
 package main
 
 import (
-	"crypto/hmac"
+	"crypto"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
@@ -11,8 +11,6 @@ import (
 	"encoding/pem"
 	"fmt"
 	"os"
-	"strconv"
-	"strings"
 )
 
 type Header struct {
@@ -62,37 +60,27 @@ func readRSAPrivateKey(filename string) (*rsa.PrivateKey, error) {
 	return privateKey, nil
 }
 
-func createJwt(header Header, claims Claims, secret string) string {
-
-	headerDataJSON, _ := json.Marshal(header)
+func CreateJWT(header Header, claims Claims, privateKey *rsa.PrivateKey) (string, error) {
+	headerJSON, _ := json.Marshal(header)
 	claimsJSON, _ := json.Marshal(claims)
-	encodedHeader := base64.URLEncoding.EncodeToString(headerDataJSON)
+
+	encodedHeader := base64.RawURLEncoding.EncodeToString(headerJSON)
 	encodedClaims := base64.RawURLEncoding.EncodeToString(claimsJSON)
 
-	secretByte := []byte(secret)
+	signingInput := fmt.Sprintf("%s.%s", encodedHeader, encodedClaims)
 
-	var builder strings.Builder
-	builder.Grow(len(encodedHeader) + len(encodedClaims))
+	hashed := sha256.Sum256([]byte(signingInput))
 
-	parts := []string{encodedHeader, ".", encodedClaims}
-
-	for _, part := range parts {
-		builder.WriteString(part)
+	signature, err := rsa.SignPKCS1v15(rand.Reader, privateKey, crypto.SHA256, hashed[:])
+	if err != nil {
+		return "", fmt.Errorf("failed to sign JWT: %w", err)
 	}
 
-	hmac := hmac.New(sha256.New, secretByte)
+	encodedSignature := base64.RawURLEncoding.EncodeToString(signature)
 
-	hmac.Write([]byte(builder.String()))
-	dataHmac := hmac.Sum(nil)
+	jwt := fmt.Sprintf("%s.%s.%s", encodedHeader, encodedClaims, encodedSignature)
 
-	hmacHex := base64.RawURLEncoding.EncodeToString(dataHmac)
-	secretHex := base64.RawURLEncoding.EncodeToString(secretByte)
-	jwt := fmt.Sprintf("%s.%s.%s", encodedHeader, encodedClaims, hmacHex)
-
-	fmt.Printf("HMAC_SHA256(key: %s, data: %s): %s \n", secretHex, builder.String(), hmacHex)
-	fmt.Printf("JWT: %s \n", jwt)
-
-	return jwt
+	return jwt, nil
 }
 
 func main() {
@@ -117,7 +105,6 @@ func main() {
 		return
 	}
 
-	createJwt(headerData, payloadJSONUnmarshaled, string(secret))
 
 	//TODO: Create JWK file to read public key and validate signature
 	key, err := readRSAPrivateKey("./rsa")
@@ -128,11 +115,7 @@ func main() {
 
 	fmt.Printf("RSA Key: %+v\n", key)
 
-	// n := base64.RawURLEncoding.EncodeToString(key.N.Bytes())
-	// bytes := make([]byte, 8)
-	// binary.BigEndian.PutUint64(bytes, uint64(key.E))
-	// e := base64.RawURLEncoding.EncodeToString(bytes)
+	jwt, _ := CreateJWT(headerData, payloadJSONUnmarshaled, key)
 
-	fmt.Printf("N: %+v\n", base64.StdEncoding.EncodeToString([]byte(key.N.String())))
-	fmt.Printf("E: %+v\n", base64.StdEncoding.EncodeToString([]byte(strconv.Itoa(key.E))))
+	fmt.Printf("JWT: %+v\n", jwt)
 }
