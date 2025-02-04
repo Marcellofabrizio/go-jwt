@@ -41,7 +41,7 @@ type JWK struct {
 	X5t string   `json:"x5t"`
 }
 
-func readRSAPrivateKey(filename string) (*rsa.PrivateKey, error) {
+func ReadRSAPrivateKey(filename string) (*rsa.PrivateKey, error) {
 	pemData, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read file: %w", err)
@@ -107,7 +107,7 @@ func main() {
 
 
 	//TODO: Create JWK file to read public key and validate signature
-	key, err := readRSAPrivateKey("./rsa")
+	key, err := ReadRSAPrivateKey("./rsa")
 	if err != nil {
 		fmt.Println("Error:", err)
 		os.Exit(1)
